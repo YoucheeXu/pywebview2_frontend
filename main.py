@@ -1,4 +1,5 @@
-import os
+import sys
+from pathlib import Path
 import mimetypes
 import time
 from threading import Thread
@@ -37,8 +38,13 @@ def create_window():
         url = 'http://127.0.0.1:5173'
     else:
         # 生产环境：加载打包后的静态文件（绝对路径）
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        url = os.path.abspath(os.path.join(current_dir, '../dist/index.html'))
+        # current_dir = os.path.dirname(os.path.abspath(__file__))
+        # url = os.path.abspath(os.path.join(current_dir, '../dist/index.html'))
+        if getattr(sys, "frozen", False):
+            proj_path = Path(sys.executable).parent.absolute()
+        else:
+            proj_path = (Path(__file__).parent.parent / "dist").absolute()
+        url = proj_path / "index.html"
         print(f"url = {url}")
         # 修复某些情况下，打包后软件打开白屏的问题
         mimetypes.add_type('application/javascript', '.js')
@@ -47,7 +53,7 @@ def create_window():
     # 3. 创建 WebView2 窗口
     window = webview.create_window(
         title='PyWebView 6.1 + Vue3 + TS GUI',
-        url=url,
+        url=str(url),
         width=701+16,
         height=548+36,
         easy_drag=True,
