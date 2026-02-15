@@ -34,12 +34,13 @@ class WebView2:
         # print(f"url = {self._url}")
         self._window: webview.Window | None =  None
 
-    def invoke(self, idmsg: str, **kwargs: object):
+    def invoke(self, idmsg: str, *args: object):
         assert self._window is not None
+        print(f"invoke: {args}")
         match idmsg:
             case "resize":
-                width = cast(int, kwargs["width"])
-                height = cast(int, kwargs["height"])
+                width = cast(int, args[0])
+                height = cast(int, args[1])
                 self._window.resize(width, height)
             case "minimize":
                 self._window.minimize()
@@ -48,17 +49,17 @@ class WebView2:
             case "fullscreen":
                 self._window.toggle_fullscreen()
             case "top":
-                on_top = cast(bool, kwargs["isTop"])
+                on_top = cast(bool, args[0])
                 self._window.on_top = on_top
             case _:
                 # raise ValueError(f"don't konow how to {idmsg}")
                 return {"code": 400,
                     "msg": f"unkown command: {idmsg}",
-                    "params": kwargs
+                    "params": args
                 }
         return {"code": 200,
             "msg": f"success to {idmsg}",
-            "data": kwargs
+            "data": args
         }
 
     def send_command_to_vue(self, command: str, **params: object):
