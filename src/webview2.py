@@ -37,6 +37,10 @@ class WebView2:
     def invoke(self, idmsg: str, **kwargs: object):
         assert self._window is not None
         match idmsg:
+            case "resize":
+                width = cast(int, kwargs["width"])
+                height = cast(int, kwargs["height"])
+                self._window.resize(width, height)
             case "minimize":
                 self._window.minimize()
             case "quit":
@@ -54,7 +58,7 @@ class WebView2:
                 }
         return {"code": 200,
             "msg": f"success to {idmsg}",
-            "params": kwargs
+            "data": kwargs
         }
 
     def send_command_to_vue(self, command: str, **params: object):
