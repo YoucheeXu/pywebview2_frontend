@@ -36,7 +36,7 @@ class WebView2:
 
     def invoke(self, idmsg: str, *args: object):
         assert self._window is not None
-        print(f"invoke: {args}")
+        print(f"invoke {idmsg}: {args}")
         match idmsg:
             case "resize":
                 width = cast(int, args[0])
@@ -54,8 +54,8 @@ class WebView2:
             case _:
                 # raise ValueError(f"don't konow how to {idmsg}")
                 return {"code": 400,
-                    "msg": f"unkown command: {idmsg}",
-                    "params": args
+                    "msg": f"unknown command: {idmsg}",
+                    "data": args
                 }
         return {"code": 200,
             "msg": f"success to {idmsg}",
@@ -115,7 +115,7 @@ class WebView2:
         self._window.evaluate_js(f"console.{level}({msg})")
 
     def start(self):
-        self._window = self._create_window(self._url, 701+16, 548+36)
+        self._window = self._create_window(self._url, 800, 600)
 
         assert self._window is not None
 
