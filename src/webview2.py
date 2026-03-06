@@ -107,7 +107,7 @@ class WebView2:
             frameless=True,
             resizable=False
         )
-
+        assert window is not None
         return window
 
     def start(self) -> None:
