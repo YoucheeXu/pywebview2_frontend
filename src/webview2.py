@@ -103,7 +103,7 @@ class WebView2:
             url=url,
             width=width,
             height=height,
-            easy_drag=True,
+            easy_drag=False,    # Disable global drag (only custom title bar works)
             frameless=True,
             resizable=False
         )

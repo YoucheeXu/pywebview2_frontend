@@ -13,9 +13,10 @@ class WindowAPI:
     """API class to process frontend commands for PyWebView2 window manipulation.
 
     Responsibilities:
-        - Handle command invocations from the Vue3 frontend (resize, minimize, etc.)
+        - Handle command invocations from the Vue3 frontend (resize, minimize, move, etc.)
         - Validate commands and parameters
         - Execute window operations and return standardized responses
+        - Track window position for drag-to-move functionality
     """
 
     def __init__(self, window: webview.Window):
@@ -29,9 +30,20 @@ class WindowAPI:
     def invoke(self, idmsg: str, *args: object):
         """Process frontend commands and execute corresponding window operations.
 
+        Supported commands:
+            - resize (width: int, height: int): Resize window
+            - minimize: Minimize window
+            - quit: Close window
+            - fullscreen: Toggle fullscreen
+            - top (on_top: bool): Toggle always-on-top
+            - moveWindow (delta_x: int, delta_y: int): Move window by offset (drag-to-move)
+
         Args:
             idmsg: Command identifier (e.g., "resize", "minimize", "quit").
-            *args: Variable arguments for the command (e.g., width/height for "resize").
+            *args: Variable arguments for the command:
+                - moveWindow: (delta_x: int, delta_y: int) - relative offset from current position
+                - resize: (width: int, height: int)
+                - top: (on_top: bool)
 
         Returns:
             dict: Standardized response with status code, message, and data:
@@ -54,6 +66,19 @@ class WindowAPI:
                 width = cast(int, args[0])
                 height = cast(int, args[1])
                 self._window.resize(width, height)
+
+            case "moveWindow":
+                # Handle window drag-to-move (delta_x: relative X offset, delta_y: relative Y offset)
+                delta_x = cast(int, args[0])
+                delta_y = cast(int, args[1])
+
+                # Calculate new absolute position
+                target_x = self._window.x + delta_x
+                target_y = self._window.y + delta_y
+
+                # Move window to new position
+                self._window.move(target_x, target_y)
+                print(f"Moved window to: X={self._window.x}, Y={self._window.y}")
 
             case "minimize":
                 self._window.minimize()
