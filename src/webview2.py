@@ -1,103 +1,103 @@
-#!/usr/bin/python3
-# -*- coding: UTF-8 -*-
+"""
+PyWebView2 window manager for Vue3+TS frontend integration.
+
+This class handles window creation, lifecycle management, and communication with the
+Vue3 frontend (e.g., sending commands from Python to Vue). It delegates command
+processing to the isolated WindowAPI class.
+"""
+
 from pathlib import Path
-import time
 import json
-# from threading import Thread
 import mimetypes
-from typing import cast
-
 import webview
+from src.window_api import WindowAPI  # Import the isolated WindowAPI
 
-# 定义 API 类
-class Api:
-    def hello(self, name: str) -> str:
-        """前端调用的方法：接收参数并返回结果"""
-        return f'你好 {name}！我是 Python 后端（pywebview 6.1）'
-
-    def send_message_to_frontend(self, window: webview.Window):
-        """Python 主动向前端推送消息（6.1 最简方案）"""
-        time.sleep(3)  # 模拟延迟
-        message = '这是 Python 主动发送的消息（6.1版本）！'
-        
-        # 关键：直接调用前端定义的全局回调函数 handlePythonMessage
-        # 避免使用废弃的 window.pywebview.on 方法
-        window.evaluate_js(f"""
-            if (window.handlePythonMessage) {{
-                window.handlePythonMessage('{message}');
-            }}
-        """)
 
 class WebView2:
+    """PyWebView2 window manager for Vue3+TS applications.
+
+    Responsibilities:
+        - Create and configure PyWebView2 windows
+        - Manage window lifecycle (start, stop)
+        - Handle communication from Python to Vue3 frontend
+        - Delegate frontend command processing to WindowAPI
+    """
+
     def __init__(self, main_path: Path):
-        self._url: str = str(main_path / "index.html")
-        # print(f"url = {self._url}")
-        self._window: webview.Window | None =  None
+        """Initialize WebView2 manager with the path to the Vue index.html.
 
-    def invoke(self, idmsg: str, *args: object):
-        assert self._window is not None
-        print(f"invoke {idmsg}: {args}")
-        match idmsg:
-            case "resize":
-                width = cast(int, args[0])
-                height = cast(int, args[1])
-                self._window.resize(width, height)
-            case "minimize":
-                self._window.minimize()
-            case "quit":
-                self._window.destroy()
-            case "fullscreen":
-                self._window.toggle_fullscreen()
-            case "top":
-                on_top = cast(bool, args[0])
-                self._window.on_top = on_top
-            case _:
-                # raise ValueError(f"don't konow how to {idmsg}")
-                return {"code": 400,
-                    "msg": f"unknown command: {idmsg}",
-                    "data": args
-                }
-        return {"code": 200,
-            "msg": f"success to {idmsg}",
-            "data": args
-        }
-
-    def send_command_to_vue(self, command: str, **params: object):
-        """ pywebview2主动向Vue3发送命令（带/不带参数）
-        :param command: 命令名称（前端要接收的标识）
-        :param params: 可选的命令参数
+        Args:
+            main_path: Path to the directory containing index.html (Vue build folder).
         """
-        assert self._window is not None
+        self._url: str = str(main_path / "index.html")
+        self._window: webview.Window | None = None
+        self._window_api: WindowAPI | None = None  # Isolated API instance
+
+    def send_command_to_vue(self, command: str, **params: object) -> None:
+        """Send commands from Python to Vue3 frontend (with optional parameters).
+
+        Args:
+            command: Command identifier (frontend's `handlePythonCommand` will receive this).
+            **params: Optional key-value parameters to send to the frontend.
+
+        Raises:
+            AssertionError: If the window instance is not initialized.
+            Exception: If JS evaluation or JSON serialization fails.
+        """
+        assert self._window is not None, "Window instance is not initialized"
+
         try:
-            # 1. 构造要执行的JS代码：调用前端全局函数接收命令
-            # 将参数序列化为JSON字符串，确保跨语言传递的正确性
+            # Serialize parameters to JSON (safe cross-language transfer)
             params_json = json.dumps(params)
-            
-            # 2. 执行前端的全局函数 `handlePythonCommand`（需在Vue3中定义）
+
+            # JS code to call frontend's global `handlePythonCommand` function
             js_code = f"""
                 if (window.handlePythonCommand) {{
                     window.handlePythonCommand('{command}', {params_json});
                 }} else {{
-                    console.error('未找到前端的handlePythonCommand函数');
+                    console.error('Frontend function handlePythonCommand not found');
                 }}
             """
 
-            # 3. 执行JS代码，实现主动发消息
+            # Execute JS in the window
             self._window.evaluate_js(js_code)
-            print(f"已向Vue3发送命令：{command}，参数={params}")
-            
-        except Exception as e:
-            print(f"向Vue3发送命令失败：{str(e)}")
+            print(f"Sent command to Vue3: {command}, params={params}")
 
-    # 初始化 pywebview 窗口
-    def _create_window(self, url: str, width: int, height: int):
- 
-        print(f"url = {url}")
-        # 修复某些情况下，打包后软件打开白屏的问题
+        except Exception as e:
+            print(f"Failed to send command to Vue3: {str(e)}")
+
+    def log(self, msg: str, level: str = "log") -> None:
+        """Log messages to the frontend's browser console.
+
+        Args:
+            msg: Message to log.
+            level: Console log level (log/error/warn/info).
+
+        Raises:
+            AssertionError: If the window instance is not initialized.
+        """
+        assert self._window is not None, "Window instance is not initialized"
+        self._window.evaluate_js(f"console.{level}({msg})")
+
+    def _create_window(self, url: str, width: int, height: int) -> webview.Window:
+        """Internal method to create a PyWebView2 window with fixed configuration.
+
+        Fixes white-screen issues in packaged apps and sets window style/behavior.
+
+        Args:
+            url: Path/URL to the Vue index.html file.
+            width: Initial window width (pixels).
+            height: Initial window height (pixels).
+
+        Returns:
+            webview.Window: Configured PyWebView2 window instance.
+        """
+        print(f"Creating window with URL: {url}")
+
+        # Fix white-screen issue in packaged apps (MIME type for JS)
         mimetypes.add_type('application/javascript', '.js')
 
-        # index_html_url = f'file:///{url.replace("\\", "/")}'
-        # 3. 创建 WebView2 窗口
+        # Create window with fixed settings
         window = webview.create_window(
             title='PyWebView 6.1 + Vue3 + TS GUI',
             url=url,
@@ -110,20 +110,23 @@ class WebView2:
 
         return window
 
-    def log(self, msg: str, level: str = "log"):
-        assert self._window is not None
-        self._window.evaluate_js(f"console.{level}({msg})")
+    def start(self) -> None:
+        """Start the PyWebView2 window and expose the isolated WindowAPI to frontend.
 
-    def start(self):
+        This method:
+            1. Creates the window instance
+            2. Initializes the isolated WindowAPI
+            3. Exposes the API's `invoke` method to the frontend
+            4. Starts the PyWebView2 event loop
+        """
+        # Create window
         self._window = self._create_window(self._url, 800, 600)
 
-        assert self._window is not None
+        # Initialize isolated WindowAPI (delegate command handling)
+        self._window_api = WindowAPI(self._window)
 
-        # 4. 暴露 API 方法给前端（6.1 位置参数传方法对象）
-        self._window.expose(self.invoke)
+        # Expose ONLY the WindowAPI's invoke method to the frontend
+        self._window.expose(self._window_api.invoke)
 
-        # 5. 启动线程：Python 主动向前端发消息
-        # Thread(target=api.send_message_to_frontend, args=(window,), daemon=True).start()
-
-        # 6. 启动时指定调试模式
+        # Start PyWebView2 with debug mode
         webview.start(debug=True)
