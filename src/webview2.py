@@ -9,8 +9,14 @@ processing to the isolated WindowAPI class.
 from pathlib import Path
 import json
 import mimetypes
+# import subprocess
+import os
+from typing import cast
+
 import webview
-from src.window_api import WindowAPI  # Import the isolated WindowAPI
+
+from src.window_api import WindowAPI
+from src.webview2_types import ServerConfig  # Import the isolated WindowAPI
 
 
 class WebView2:
@@ -23,7 +29,7 @@ class WebView2:
         - Delegate frontend command processing to WindowAPI
     """
 
-    def __init__(self, main_path: Path):
+    def __init__(self, main_path: Path, cfgfile: Path):
         """Initialize WebView2 manager with the path to the Vue index.html.
 
         Args:
@@ -32,6 +38,18 @@ class WebView2:
         self._url: str = str(main_path / "index.html")
         self._window: webview.Window | None = None
         self._window_api: WindowAPI | None = None  # Isolated API instance
+
+        # read config
+        if Path.exists(cfgfile):
+            with open(cfgfile, 'r', encoding='utf-8') as f:
+                json_data = f.read()
+                cfgdict = cast(ServerConfig, json.loads(json_data)["Server"])
+                if "app" in cfgdict:
+                    self._open_server(main_path / cfgdict["app"])
+
+    def _open_server(self, server_path: Path):
+        # _ = subprocess.Popen(server_path)
+        os.startfile(server_path)
 
     def send_command_to_vue(self, command: str, **params: object) -> None:
         """Send commands from Python to Vue3 frontend (with optional parameters).
