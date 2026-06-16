@@ -126,6 +126,7 @@ class WebView2:
             resizable=False
         )
         assert window is not None
+        webview.settings['DRAG_REGION_SELECTOR'] = ".titlebar"
         return window
 
     def start(self) -> None:
