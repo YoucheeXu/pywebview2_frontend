@@ -115,6 +115,8 @@ class WebView2:
         # Fix white-screen issue in packaged apps (MIME type for JS)
         mimetypes.add_type('application/javascript', '.js')
 
+        webview.settings["REMOTE_DEBUGGING_PORT"] = 9222
+
         # Create window with fixed settings
         window = webview.create_window(
             title='PyWebView 6.1 + Vue3 + TS GUI',
@@ -147,5 +149,5 @@ class WebView2:
         # Expose ONLY the WindowAPI's invoke method to the frontend
         self._window.expose(self._window_api.invoke)
 
-        # Start PyWebView2 with debug mode
-        webview.start(debug=True)
+        # Start PyWebView2 without debug mode
+        webview.start()

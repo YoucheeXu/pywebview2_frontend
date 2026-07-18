@@ -15,5 +15,5 @@ if __name__ == '__main__':
         main_path = (Path(__file__).parent.parent / "dist").absolute()
 
     cfgfile = main_path / "Dictionary.json"
-    webviwe = WebView2(main_path, cfgfile)
-    webviwe.start()
+    webview = WebView2(main_path, cfgfile)
+    webview.start()
