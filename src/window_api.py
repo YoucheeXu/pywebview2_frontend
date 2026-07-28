@@ -107,6 +107,10 @@ class WindowAPI:
                     print(f"Restart failed: {str(e)}")
                     sys.exit(1)
 
+            case "ModifyTitle":
+                title = cast(str, args[0])
+                self._window.title = title
+
             case _:
                 # Return error response for unknown commands
                 return {
