@@ -1,22 +1,13 @@
-"""
-PyWebView2 window manager for Vue3+TS frontend integration.
-
-This class handles window creation, lifecycle management, and communication with the
-Vue3 frontend (e.g., sending commands from Python to Vue). It delegates command
-processing to the isolated WindowAPI class.
-"""
-
-from pathlib import Path
 import json
 import mimetypes
-# import subprocess
 import os
+from pathlib import Path
 from typing import cast
 
 import webview
 
+from src.webview2_types import ServerConfig
 from src.window_api import WindowAPI
-from src.webview2_types import ServerConfig  # Import the isolated WindowAPI
 
 
 class WebView2:
@@ -43,16 +34,17 @@ class WebView2:
         if Path.exists(cfgfile):
             with open(cfgfile, 'r', encoding='utf-8') as f:
                 json_data = f.read()
-                cfgdict = cast(ServerConfig, json.loads(json_data)["Server"])
-                if "app" in cfgdict:
-                    self._open_server(main_path / cfgdict["app"])
+                cfgdict = json.loads(json_data)
+                svrcfgdict = cast(ServerConfig, cfgdict["Server"])
+                if "app" in svrcfgdict:
+                    self._open_server(main_path / svrcfgdict["app"])
 
     def _open_server(self, server_path: Path):
         # _ = subprocess.Popen(server_path)
         os.startfile(server_path)
 
     def send_command_to_vue(self, command: str, **params: object) -> None:
-        """Send commands from Python to Vue3 frontend (with optional parameters).
+        """ Send commands from Python to Vue3 frontend (with optional parameters).
 
         Args:
             command: Command identifier (frontend's `handlePythonCommand` will receive this).
@@ -85,7 +77,7 @@ class WebView2:
             print(f"Failed to send command to Vue3: {str(e)}")
 
     def log(self, msg: str, level: str = "log") -> None:
-        """Log messages to the frontend's browser console.
+        """ Log messages to the frontend's browser console.
 
         Args:
             msg: Message to log.

@@ -1,12 +1,7 @@
-"""
-Window API for handling frontend command invocations in PyWebView2.
-
-This class encapsulates all logic for processing commands sent from the Vue3 frontend
-(e.g., resize, minimize, quit), decoupling command handling from window management.
-"""
 import os
 import sys
 from typing import cast
+
 import webview
 
 
@@ -96,6 +91,7 @@ class WindowAPI:
                 self._window.on_top = on_top
 
             case "restart":
+                # self._isdebug = cast(bool, args[0])
                 print("Initiating application restart...")
                 # 1. Close ALL pywebview windows (stops the GUI loop)
                 for window in webview.windows:
@@ -104,7 +100,7 @@ class WindowAPI:
                 try:
                     os.execv(sys.executable, [sys.executable] + sys.argv)
                 except Exception as e:
-                    print(f"Restart failed: {str(e)}")
+                    print(f"Restart failed: {e!s}")
                     sys.exit(1)
 
             case "ModifyTitle":

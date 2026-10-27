@@ -1,4 +1,5 @@
-from typing import TypedDict, NotRequired
+from typing import NotRequired, TypedDict
+
 
 class ServerConfig(TypedDict):
     serverUrl: str
