@@ -141,5 +141,7 @@ class WebView2:
         # Expose ONLY the WindowAPI's invoke method to the frontend
         self._window.expose(self._window_api.invoke)
 
+        webview.settings['OPEN_DEVTOOLS_IN_DEBUG'] = False
+
         # Start PyWebView2 without debug mode
-        webview.start()
+        webview.start(debug=True)
